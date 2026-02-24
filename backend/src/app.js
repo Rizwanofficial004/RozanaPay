@@ -19,14 +19,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check (support both local and serverless path styles)
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ success: true, message: 'Server is running' });
 });
 
 // Vercel Cron: process recurring schedules (called daily at midnight)
 // Secured by CRON_SECRET - Vercel sends this in Authorization header
-app.get('/api/cron/process-schedules', async (req, res) => {
+app.get(['/api/cron/process-schedules', '/cron/process-schedules'], async (req, res) => {
   const authHeader = req.headers.authorization;
   const cronSecret = process.env.CRON_SECRET;
 
@@ -43,14 +43,14 @@ app.get('/api/cron/process-schedules', async (req, res) => {
   }
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/super-admin', superAdminRoutes);
-app.use('/api/business-owner', businessOwnerRoutes);
-app.use('/api/client', clientRoutes);
+// Routes (mount both with and without /api for Vercel compatibility)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/super-admin', '/super-admin'], superAdminRoutes);
+app.use(['/api/business-owner', '/business-owner'], businessOwnerRoutes);
+app.use(['/api/client', '/client'], clientRoutes);
 
 // Payment Gateway Webhook Placeholder (Future Integration)
-app.post('/api/webhooks/payment', (req, res) => {
+app.post(['/api/webhooks/payment', '/webhooks/payment'], (req, res) => {
   console.log('Payment webhook received:', req.body);
   res.json({ success: true, message: 'Webhook received' });
 });
