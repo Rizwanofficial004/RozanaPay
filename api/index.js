@@ -1,4 +1,5 @@
-// Vercel serverless handler - single entrypoint for all /api/* requests
-import app from '../backend/src/app.js';
-
-export default app;
+// Vercel serverless handler (CommonJS wrapper for ESM backend app)
+module.exports = async (req, res) => {
+  const { default: app } = await import('../backend/src/app.js');
+  return app(req, res);
+};
