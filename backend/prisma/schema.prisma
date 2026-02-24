@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  role      String   // "super_admin", "business_owner", "client"
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  business   Business? @relation(fields: [businessId], references: [id])
+  businessId String?   @db.ObjectId
+
+  client   Client? @relation(fields: [clientId], references: [id])
+  clientId String? @db.ObjectId
+
+  @@map("users")
+}
+
+model Business {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String   @unique
+  phone       String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users                User[]
+  clients              Client[]
+  recoveryTransactions RecoveryTransaction[]
+  coinRules            CoinRule[]
+  recurringSchedules   RecurringSchedule[]
+
+  @@map("businesses")
+}
+
+model Client {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String
+  phone       String?
+  address     String?
+  businessId  String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  business             Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  users                User[]
+  recoveryTransactions RecoveryTransaction[]
+  coinWallet           CoinWallet?
+  coinTransactions     CoinTransaction[]
+  recurringSchedules   RecurringSchedule[]
+
+  @@unique([email, businessId])
+  @@map("clients")
+}
+
+model RecoveryTransaction {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount            Float
+  status            String   // "pending", "paid"
+  paymentMethod     String?  // "manual", "gateway"
+  paymentReference  String?
+  dueDate           DateTime?
+  paidDate          DateTime?
+  notes             String?
+  businessId        String   @db.ObjectId
+  clientId          String   @db.ObjectId
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("recovery_transactions")
+}
+
+model CoinWallet {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  balance    Int      @default(0)
+  clientId   String   @unique @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("coin_wallets")
+}
+
+model CoinTransaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount      Int      // positive for earned, negative for claimed
+  type        String   // "earned", "claimed"
+  description String
+  clientId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("coin_transactions")
+}
+
+model CoinRule {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  recoveryAmountPerCoin   Float    @default(100)  // Amount needed to earn 1 coin
+  minClaimCoins           Int      @default(10)   // Minimum coins required to claim
+  coinValueDescription    String   @default("1 coin = 1 unit value")
+  businessId              String   @unique @db.ObjectId
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("coin_rules")
+}
+
+model RecurringSchedule {
+  id                String     @id @default(auto()) @map("_id") @db.ObjectId
+  name              String     // e.g., "Daily Recovery - Shop A"
+  amount            Float
+  frequency         String     // "daily", "weekly", "monthly", "custom"
+  
+  // Days of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+  enabledDays       Int[]      // [1,2,3,4,5] for weekdays
+  
+  // Optional: specific dates to skip
+  excludedDates     DateTime[] @default([])
+  
+  // Status
+  isActive          Boolean    @default(true)
+  startDate         DateTime   @default(now())
+  endDate           DateTime?  // null = no end date
+  
+  // Last run tracking
+  lastRunDate       DateTime?
+  nextRunDate       DateTime?
+  
+  // Relations
+  businessId        String     @db.ObjectId
+  clientId          String     @db.ObjectId
+  
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@map("recurring_schedules")
+}

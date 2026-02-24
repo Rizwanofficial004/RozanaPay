@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "buildCommand": "cd backend && npm run prisma:generate && cd ../frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm run install:all",
+  "framework": null,
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/process-schedules",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
