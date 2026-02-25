@@ -1,14 +1,19 @@
-import cron from 'node-cron';
 import prisma from '../utils/prisma.js';
 import { shouldRunToday, calculateNextRunDate } from '../utils/scheduleHelpers.js';
 
 // Only run node-cron when not on Vercel (Vercel uses its own Cron via /api/cron/process-schedules)
 if (!process.env.VERCEL) {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('🕐 Running recurring transaction job at midnight...');
-    await processRecurringSchedules();
-  });
-  console.log('✅ Cron service initialized - scheduled to run at midnight (00:00)');
+  import('node-cron')
+    .then(({ default: cron }) => {
+      cron.schedule('0 0 * * *', async () => {
+        console.log('🕐 Running recurring transaction job at midnight...');
+        await processRecurringSchedules();
+      });
+      console.log('✅ Cron service initialized - scheduled to run at midnight (00:00)');
+    })
+    .catch((error) => {
+      console.error('❌ Failed to initialize local cron scheduler:', error);
+    });
 }
 
 // Main function to process all active schedules
