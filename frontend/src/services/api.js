@@ -1,13 +1,16 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+const backendBaseUrl = import.meta.env.VITE_API_URL?.replace(/\/+$/, '');
+const baseURL = backendBaseUrl ? `${backendBaseUrl}/api` : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
-// s;lakfjd
+
 // Request interceptor to add token
 api.interceptors.request.use(
   (config) => {

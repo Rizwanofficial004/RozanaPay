@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "installCommand": "npm install",
+  "buildCommand": "npm run prisma:generate",
+  "functions": {
+    "api/[...path].js": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/[...path].js" },
+    { "src": "/(.*)", "dest": "/api/[...path].js" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/process-schedules",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
