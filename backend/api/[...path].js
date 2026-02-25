@@ -9,6 +9,8 @@ export default async function handler(req, res) {
     return res.status(500).json({
       success: false,
       error: 'Backend failed to initialize',
+      details: error?.message || 'Unknown bootstrap error',
+      stack: error?.stack?.split('\n').slice(0, 5),
       hint: 'Check Vercel env vars (DATABASE_URL, JWT_SECRET, CRON_SECRET) and runtime logs.',
     });
   }
